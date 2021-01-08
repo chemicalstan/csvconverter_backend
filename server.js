@@ -6,7 +6,7 @@ const csv = require("csvtojson");
 const request = require("request");
 const joi = require("joi");
 
-const port = "3999";
+const port = "4200";
 const app = express();
 app.use(bodyParser.json());
 app.get("/", (req, res) => {
@@ -16,21 +16,35 @@ app.get("/", (req, res) => {
 // HTTP POST end point
 app.post(
   "/",
-  (req, res, next) => {
-    
-  },
-  async (req, res) => {
-    console.log(req.body.constructor);
-    console.log(Object.keys(req.body));
-    if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
-      // console.log();
-    }
+  async (req, res, next) => {
+    try {
+      const schema = joi.object({
+        url: joi
+          .string()
+          .uri()
+          .regex(/\.csv$/)
+          .required(),
+        select_fields: joi.array()
+      });
 
+      await schema.validateAsync(req.body.csv);
+    } catch (e) {
+      res.status(400).send(e.message);
+    }
+    next();
+  },
+
+  async (req, res) => {
     try {
       const { url, select_fields } = req.body.csv;
 
       const jsonArray = await csv().fromStream(request.get(url));
-
+      // return jsonArray
+      if(jsonArray.length < 1){
+        res.status(200).json({
+          message: "Please enter a valid CSV url"
+        });
+      }
       if (!select_fields) {
         res.status(200).json({
           conversion_key: uuidv4(),
@@ -48,7 +62,8 @@ app.post(
       });
     } catch (error) {
       res.status(500).json({
-        message: "Ops, something went wrong."
+        error: `Ops, ${error.message}`,
+        message: 'Please Enter a valid payload'
       });
     }
   }

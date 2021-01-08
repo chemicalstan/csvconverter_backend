@@ -4,7 +4,6 @@ const _ = require("lodash");
 const { v4: uuidv4 } = require("uuid");
 const csv = require("csvtojson");
 const request = require("request");
-// const fs = require("fs");
 
 const port = "3999";
 const app = express();
